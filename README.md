@@ -5,6 +5,8 @@ openfortivpn-saml allows the use of SAML authentication when using Fortinet/Fort
 - Due to the nature of SAML, we need to emulate a browser.
 - When starting openfortivpn-saml for the first time, it will download dependencies such as Chromium and Playwright.  
 This does not happen in subsequent runs and should not take too long.
+## Release page
+https://git.deribit.internal/deribit/sys-admin/openfortivpn-saml/-/releases
 ## Usage
 Place `config.yaml` in `/etc/openfortivpn-saml`, or in the same directory as the binary.
 ##### config.yaml contents
