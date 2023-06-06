@@ -1,0 +1,54 @@
+# This file is a template, and might need editing before it works on your project.
+# You can copy and paste this template into a new `.gitlab-ci.yml` file.
+# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
+#
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Go.gitlab-ci.yml
+
+image: golang:latest
+
+stages:
+    - build
+    - release
+
+compile:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo GE_JOB_ID=$CI_JOB_ID >> compile.env
+    - mkdir archives
+    - GOOS=windows GOARCH=amd64 go build -o openfortivpn-saml
+    - tar -cvzf openfortivpn-saml-windows-amd64.tar.gz openfortivpn-saml
+    - GOOS=linux GOARCH=amd64 go build -o openfortivpn-saml
+    - tar -cvzf openfortivpn-saml-linux-amd64.tar.gz openfortivpn-saml
+    - GOOS=darwin GOARCH=arm64 go build -o openfortivpn-saml
+    - tar -cvzf openfortivpn-saml-darwin-arm64.tar.gz openfortivpn-saml
+    - mv *tar.gz archives
+  artifacts:
+      paths:
+        - archives
+      reports:
+        # To ensure we've access to this file in the next stage
+        dotenv: compile.env
+
+release_job:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - job: compile
+      artifacts: true
+  script:
+    - |
+      echo Releasing with tag: $CI_COMMIT_TAG
+      release-cli --insecure-https=true create \
+      --name "Release $CI_COMMIT_TAG" \
+      --tag-name "$CI_COMMIT_TAG" \
+      --description "$CI_COMMIT_TAG" \
+      --ref "$CI_COMMIT_SHA" \
+      --assets-link "[ {\"name\": \"Linux\", \"url\": \"https://git.deribit.internal/deribit/sys-admin/openfortivpn-saml/-/jobs/${GE_JOB_ID}/artifacts/file/archives/openfortivpn-saml-linux-amd64.tar.gz\"}, {\"name\": \"Windows\", \"url\": \"https://git.deribit.internal/deribit/sys-admin/openfortivpn-saml/-/jobs/${GE_JOB_ID}/artifacts/file/archives/openfortivpn-saml-windows-amd64.tar.gz\"}, {\"name\": \"Mac\", \"url\": \"https://git.deribit.internal/deribit/sys-admin/openfortivpn-saml/-/jobs/${GE_JOB_ID}/artifacts/file/archives/openfortivpn-saml-darwin-arm64.tar.gz\"} ]"
+
