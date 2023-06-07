@@ -28,3 +28,5 @@ Depending on how you currently use openfortivpn, your run command may vary:
 ```
 openfortivpn-saml | sudo openfortivpn -c /etc/openfortivpn/config --cookie-on-stdin
 ```
+### MacOS Gatekeeper
+As the software is not signed, you would need to approve it after the first run via `System Settings > Privacy & Security` and allow it in `Gatekeeper` section.
