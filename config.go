@@ -89,6 +89,7 @@ func initConfig() (config Config, err error) {
 }
 
 func readConfig() (config Config) {
+	log.Printf("Loading config from: %s...", getConfigPath())
 	var file *os.File
 	file, _ = os.Open(getConfigPath())
 	// Initialize config if none is found
@@ -108,7 +109,6 @@ func readConfig() (config Config) {
 			log.Fatalf("Could not decode config at %v: %v", getConfigPath(), err)
 		}
 	}
-	log.Printf("Loaded config from: %s", getConfigPath())
 	log.Println("Please enter your master password.")
 	pwdMaster, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
@@ -116,5 +116,6 @@ func readConfig() (config Config) {
 	}
 	config.Username = decrypt(string(pwdMaster), config.Username)
 	config.Password = decrypt(string(pwdMaster), config.Password)
+	log.Printf("Config loaded.")
 	return config
 }
