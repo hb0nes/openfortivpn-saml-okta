@@ -70,6 +70,7 @@ func initConfig() (config Config, err error) {
 	if err != nil {
 		log.Fatalf("Could not open file %s for writing: %v", configName, err)
 	}
+	defer configFile.Close()
 	config = Config{
 		Username: userOkta,
 		Password: string(pwdOkta),
