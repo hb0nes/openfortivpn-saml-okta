@@ -18,6 +18,7 @@ type Config struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Totp     bool   `yaml:"totp"`
+	Headless *bool  `yaml:"headless"`
 }
 
 func getConfigPath() (configPath string) {
@@ -89,7 +90,7 @@ func initConfig() (config Config, err error) {
 	return config, err
 }
 
-func readConfig() (config Config) {
+func configRead() (config Config) {
 	log.Printf("Loading config from: %s...", getConfigPath())
 	var file *os.File
 	file, _ = os.Open(getConfigPath())
@@ -117,6 +118,5 @@ func readConfig() (config Config) {
 	}
 	config.Username = decrypt(string(pwdMaster), config.Username)
 	config.Password = decrypt(string(pwdMaster), config.Password)
-	log.Printf("Config loaded.")
 	return config
 }
