@@ -127,14 +127,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create page: %v", err)
 	}
-	page.SetDefaultTimeout(10000)
 	if config.Totp {
 		go chooseTOTP(page)
 		go enterTOTP(page, totp)
 	}
 	log.Println("Navigating to https://vpn.deribit.com")
 	if _, err = page.Goto("https://vpn.deribit.com"); err != nil {
-		log.Printf("Could not navigate: %v", err)
+		log.Fatalf("Could not navigate: %v", err)
 	}
 	log.Println("Clicking SAML login button...")
 	if err = page.Click("button#saml-login-bn"); err != nil {
@@ -144,6 +143,6 @@ func main() {
 	go searchCookie(page)
 	go enterUsername(page)
 	go enterPassword(page)
-	time.Sleep(time.Second * 15)
-	log.Fatal("Timed out after 15s. Exiting.")
+	time.Sleep(time.Second * 30)
+	log.Fatal("Timed out after 30s. Exiting.")
 }
