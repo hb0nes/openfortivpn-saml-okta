@@ -3,7 +3,8 @@
 openfortivpn-saml allows the use of SAML authentication when using Fortinet/FortiGate SSLVPN with Okta as IdP.
 ## Installation
 - Get the correct release at `Deployments > Releases` or compile yourself if it isn't precompiled.
-- Run the application and go through the setup wizard.
+- Move the binary to e.g.: `/usr/local/bin`
+- Run the binary (see `Running` section below) and go through the setup wizard.
   - It will prompt for a master password. This is used to encrypt your credentials when saving to disk.
   - The master password is not stored anywhere and is only known by you, just like with a password manager.
 - If your Okta credentials have changed or you forgot your master password, remove the config file and start the application again to reinitialize.
