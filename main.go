@@ -89,7 +89,6 @@ func enterTOTP(page playwright.Page, totp int) {
 }
 
 func main() {
-	config = readConfig()
 	opts := playwright.RunOptions{
 		DriverDirectory:     "",
 		SkipInstallBrowsers: false,
@@ -104,10 +103,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not start playwright: %v", err)
 	}
+	config = readConfig()
+	var totp int
+	if config.Totp {
+		totp, err = askTOTP()
+		if err != nil {
+			log.Fatalf("Could not get TOTP: %v", err)
+		}
+	}
 	browser, err := pw.Chromium.Launch(
 		playwright.BrowserTypeLaunchOptions{
 			Headless: playwright.Bool(config.Totp),
-			//Headless: playwright.Bool(false),
 		},
 	)
 	if err != nil {
@@ -118,9 +124,13 @@ func main() {
 			IgnoreHttpsErrors: playwright.Bool(true),
 		},
 	)
-	page.SetDefaultTimeout(10000)
 	if err != nil {
 		log.Fatalf("Could not create page: %v", err)
+	}
+	page.SetDefaultTimeout(10000)
+	if config.Totp {
+		go chooseTOTP(page)
+		go enterTOTP(page, totp)
 	}
 	log.Println("Navigating to https://vpn.deribit.com")
 	if _, err = page.Goto("https://vpn.deribit.com"); err != nil {
@@ -130,14 +140,7 @@ func main() {
 	if err = page.Click("button#saml-login-bn"); err != nil {
 		log.Printf("Could not find the SAML login button on the FortiGate page in time. button ID: button#saml-login-bn. %v", err)
 	}
-	if config.Totp {
-		totp, err := askTOTP()
-		if err != nil {
-			log.Fatalf("Could not get TOTP: %v", err)
-		}
-		go chooseTOTP(page)
-		go enterTOTP(page, totp)
-	}
+
 	go searchCookie(page)
 	go enterUsername(page)
 	go enterPassword(page)

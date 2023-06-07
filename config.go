@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
+
+const configName = "openfortivpn-saml.yaml"
 
 type Config struct {
 	Username string `yaml:"username"`
@@ -15,32 +20,101 @@ type Config struct {
 	Totp     bool   `yaml:"totp"`
 }
 
-func readConfig() Config {
-	ex, _ := os.Executable()
-	exPath := filepath.Dir(ex)
-	dirs := []string{"/etc/openfortivpn-saml", exPath}
+func getConfigPath() (configPath string) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatal("Could not determine user directory.")
+	}
+	return filepath.Join(dir, configName)
+}
 
-	// Open YAML file
+func initConfig() (config Config, err error) {
+	var pwdMaster []byte
+	var pwdOkta []byte
+	var userOkta string
+	var totpStr string
+	var totp bool
+
+	log.Println("It appears this is your first time running openfortivpn-saml. Let's configure it.")
+	log.Println("Please enter a master password that you can remember. This password is not stored anywhere.")
+	pwdMaster, err = term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Printf("Error while reading input: %v", err)
+	}
+	log.Println("Please enter it again.")
+	pwdMaster2, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Printf("Error while reading input: %v", err)
+	}
+	if bytes.Compare(pwdMaster, pwdMaster2) != 0 {
+		log.Fatalf("Didn't enter matching master passwords.")
+	}
+	log.Println("Please enter your Okta username.")
+	_, err = fmt.Scanf("%s", &userOkta)
+	if err != nil {
+		log.Printf("Error while reading input: %v", err)
+	}
+	log.Println("Please enter your Okta password.")
+	pwdOkta, err = term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Printf("Error while reading input: %v", err)
+	}
+	log.Println("Do you intend to use TOTP/MFA such as Google Authenticator (y/n)?")
+	_, err = fmt.Scanf("%s", &totpStr)
+	if err != nil {
+		log.Printf("Error while reading input: %v", err)
+	}
+	totp = strings.ToLower(totpStr) == "y" || strings.ToLower(totpStr) == "yes"
+
+	configFile, err := os.Create(getConfigPath())
+	if err != nil {
+		log.Fatalf("Could not open file %s for writing: %v", configName, err)
+	}
+	config = Config{
+		Username: userOkta,
+		Password: string(pwdOkta),
+		Totp:     totp,
+	}
+	configEncrypted := Config{
+		Username: encrypt(string(pwdMaster), userOkta),
+		Password: encrypt(string(pwdMaster), string(pwdOkta)),
+		Totp:     totp,
+	}
+	configEncryptedBytes, err := yaml.Marshal(configEncrypted)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	configFile.WriteString(string(configEncryptedBytes))
+	return config, err
+}
+
+func readConfig() (config Config) {
 	var file *os.File
-	var config Config
-
-	for _, dir := range dirs {
-		file, _ = os.Open(fmt.Sprintf("%s/config.yaml", dir))
-		if file != nil {
-			break
-		}
-	}
+	file, _ = os.Open(getConfigPath())
+	// Initialize config if none is found
 	if file == nil {
-		log.Fatalf("Could not find any config.yaml file at locations: %s", strings.Join(dirs, ", "))
+		var err error
+		config, err = initConfig()
+		if err != nil {
+			log.Fatalf("Could not init config: %v", err)
+		}
+		return
 	}
-	defer file.Close()
-
-	// Decode YAML file to struct
+	// Decode config if found
 	if file != nil {
+		defer file.Close()
 		decoder := yaml.NewDecoder(file)
 		if err := decoder.Decode(&config); err != nil {
-			log.Fatal(err.Error())
+			log.Fatalf("Could not decode config at %v: %v", getConfigPath(), err)
 		}
 	}
+	log.Printf("Loaded config from: %s", getConfigPath())
+	log.Println("Please enter your master password.")
+	pwdMaster, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Printf("Error while reading input: %v", err)
+	}
+	config.Username = decrypt(string(pwdMaster), config.Username)
+	config.Password = decrypt(string(pwdMaster), config.Password)
 	return config
 }
