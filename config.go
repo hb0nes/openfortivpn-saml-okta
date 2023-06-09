@@ -18,7 +18,7 @@ type Config struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Totp     bool   `yaml:"totp"`
-	Headless *bool  `yaml:"headless"`
+	Headless *bool  `yaml:"headless,omitempty"`
 }
 
 func getConfigPath() (configPath string) {

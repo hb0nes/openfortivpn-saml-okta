@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
+	"regexp"
 	"time"
 )
 
@@ -50,27 +50,30 @@ func playwrightGetPage(pw *playwright.Playwright) (page playwright.Page) {
 			IgnoreHttpsErrors: playwright.Bool(true),
 		},
 	)
-	page.SetDefaultTimeout(60000)
+	 if config.Totp  {
+		 page.SetDefaultTimeout(7500)
+	 } else {
+		 page.SetDefaultTimeout(60000)
+	 }
 	if err != nil {
 		log.Fatalf("Could not create page: %v", err)
 	}
 	return page
 }
 
-func totpAsk() (totp int) {
+func totpAsk() (totp string) {
 	tries := 3
-	var stdin string
 	var err error
 	for i := 1; i <= tries; i++ {
 		log.Printf("Enter MFA TOTP (%d/3): ", i)
-		_, err = fmt.Scanf("%s", &stdin)
+		_, err = fmt.Scanf("%s", &totp)
 		if err != nil {
 			log.Printf("Error while reading input: %v", err)
 			continue
 		}
-		totp, err = strconv.Atoi(stdin)
-		if err != nil {
-			log.Printf("Error while reading input: %v", err)
+		match, _ := regexp.Match("^[0-9]{6}$", []byte(totp))
+		if !match {
+			log.Println("Not a correct TOTP. Should be 6 numbers.")
 			continue
 		}
 		break
@@ -87,9 +90,9 @@ func totpChoose(page playwright.Page) {
 	}
 }
 
-func totpInput(page playwright.Page, totp int) {
+func totpInput(page playwright.Page, totp string) {
 	log.Println("Waiting for TOTP input...")
-	if err := page.Type("input[type='text'][name='credentials.passcode']", strconv.Itoa(totp)); err != nil {
+	if err := page.Type("input[type='text'][name='credentials.passcode']", totp); err != nil {
 		log.Printf("Could not find TOTP input in time: %v.", err)
 	}
 	log.Println("Submitting TOTP...")
@@ -118,7 +121,7 @@ func cookieSearch(page playwright.Page) {
 		}
 		for _, cookie := range cookies {
 			if cookie.Name == "SVPNCOOKIE" {
-				log.Println("Found FortiGate authentication cookie: \n")
+				log.Printf("Found FortiGate authentication cookie: SVPNCOOKIE=%v", cookie.Value)
 				fmt.Printf("SVPNCOOKIE=%s", cookie.Value)
 				os.Exit(0)
 			}
@@ -173,7 +176,11 @@ func main() {
 	go cookieSearch(page)
 	go usernameInput(page)
 	go passwordInput(page)
-	time.Sleep(time.Second * 45)
+	if config.Totp {
+		time.Sleep(time.Second * 15)
+	} else {
+		time.Sleep(time.Second * 45)
+	}
 	screenshotPath := screenshot(page)
-	log.Fatalf("Timed out after 45s. See screenshot at %v. Exiting.", screenshotPath)
+	log.Fatalf("Timed out. See screenshot at %v. Exiting.", screenshotPath)
 }
