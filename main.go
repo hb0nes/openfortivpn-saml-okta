@@ -34,8 +34,8 @@ func playwrightGetPage(pw *playwright.Playwright) (page playwright.Page) {
 	var headless bool
 	if config.Headless != nil {
 		headless = *config.Headless
-	} else {
-		headless = config.Totp
+	} else if config.Totp || config.Verify {
+		headless = true
 	}
 	browser, err := pw.Chromium.Launch(
 		playwright.BrowserTypeLaunchOptions{
@@ -50,11 +50,11 @@ func playwrightGetPage(pw *playwright.Playwright) (page playwright.Page) {
 			IgnoreHttpsErrors: playwright.Bool(true),
 		},
 	)
-	 if config.Totp  {
-		 page.SetDefaultTimeout(7500)
-	 } else {
-		 page.SetDefaultTimeout(60000)
-	 }
+	if config.Totp {
+		page.SetDefaultTimeout(7500)
+	} else {
+		page.SetDefaultTimeout(60000)
+	}
 	if err != nil {
 		log.Fatalf("Could not create page: %v", err)
 	}
@@ -163,11 +163,20 @@ func screenshot(page playwright.Page) (screenshotPath string) {
 	return
 }
 
+func verifyChoose(page playwright.Page) {
+	if err := page.Click("div[data-se='okta_verify-push'] a"); err != nil {
+		log.Printf("Could not choose Okta Verify as authentication method. %v", err)
+	}
+	log.Printf("Okta Verify selected. Check your Okta Verify app.")
+}
+
 func main() {
 	pw := playwrightInit()
 	config = configRead()
 	page := playwrightGetPage(pw)
-	if config.Totp {
+	if config.Verify {
+		go verifyChoose(page)
+	} else if config.Totp {
 		totp := totpAsk()
 		go totpChoose(page)
 		go totpInput(page, totp)
@@ -179,7 +188,7 @@ func main() {
 	if config.Totp {
 		time.Sleep(time.Second * 15)
 	} else {
-		time.Sleep(time.Second * 45)
+		time.Sleep(time.Second * 60)
 	}
 	screenshotPath := screenshot(page)
 	log.Fatalf("Timed out. See screenshot at %v. Exiting.", screenshotPath)

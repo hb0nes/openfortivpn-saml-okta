@@ -18,6 +18,7 @@ type Config struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Totp     bool   `yaml:"totp"`
+	Verify   bool   `yaml:"verify"`
 	Headless *bool  `yaml:"headless,omitempty"`
 }
 
@@ -33,6 +34,8 @@ func initConfig() (config Config, err error) {
 	var pwdMaster []byte
 	var pwdOkta []byte
 	var userOkta string
+	var verifyStr string
+	var verify bool
 	var totpStr string
 	var totp bool
 
@@ -66,7 +69,14 @@ func initConfig() (config Config, err error) {
 		log.Printf("Error while reading input: %v", err)
 	}
 	totp = strings.ToLower(totpStr) == "y" || strings.ToLower(totpStr) == "yes"
-
+	if !totp {
+		log.Println("Do you intend to use Okta verify? (y/n)?")
+		_, err = fmt.Scanf("%s", &verifyStr)
+		if err != nil {
+			log.Printf("Error while reading input: %v", err)
+		}
+		verify = strings.ToLower(verifyStr) == "y" || strings.ToLower(verifyStr) == "yes"
+	}
 	configFile, err := os.Create(getConfigPath())
 	if err != nil {
 		log.Fatalf("Could not open file %s for writing: %v", configName, err)
@@ -76,11 +86,13 @@ func initConfig() (config Config, err error) {
 		Username: userOkta,
 		Password: string(pwdOkta),
 		Totp:     totp,
+		Verify:   verify,
 	}
 	configEncrypted := Config{
 		Username: encrypt(string(pwdMaster), userOkta),
 		Password: encrypt(string(pwdMaster), string(pwdOkta)),
 		Totp:     totp,
+		Verify:   verify,
 	}
 	configEncryptedBytes, err := yaml.Marshal(configEncrypted)
 	if err != nil {
