@@ -19,8 +19,9 @@ In order to run it with sudo non-interactively, run this command:
   - It will prompt for a master password. This is used to encrypt your credentials.
     - _The master password is not stored anywhere and is only known by you, just like with a password manager._
   - It will ask if you intend to use a TOTP (MFA), Okta Verify or Webauthn (YubiKey), or none of the above.
-    - Answering _yes_ will **not** show a browser, keeping openfortivpn-saml strictly CLI.
-    - Answering _no_ **will** show a browser, allowing the use of other authentication methods.
+    - _Note: TouchID won't work through this utility, YubiKey will._
+  - Answering _yes_ will **not** show a browser, keeping openfortivpn-saml strictly CLI.
+  - Answering _no_ **will** show a browser, allowing the use of other authentication methods.
 - If your Okta credentials have changed or you forgot your master password, remove the config file and start the application again to reinitialize.
   - The config file location is shown when running the application.
 ## Usage
