@@ -19,6 +19,7 @@ type Config struct {
 	Password string `yaml:"password"`
 	Totp     bool   `yaml:"totp"`
 	Verify   bool   `yaml:"verify"`
+	Webauthn bool   `yaml:"webauthn"`
 	Headless *bool  `yaml:"headless,omitempty"`
 }
 
@@ -38,6 +39,8 @@ func initConfig() (config Config, err error) {
 	var verify bool
 	var totpStr string
 	var totp bool
+	var webauthnStr string
+	var webauthn bool
 
 	log.Println("It appears this is your first time running openfortivpn-saml. Let's configure it.")
 	log.Println("Please enter a master password that you can remember. This password is not stored anywhere.")
@@ -77,6 +80,14 @@ func initConfig() (config Config, err error) {
 		}
 		verify = strings.ToLower(verifyStr) == "y" || strings.ToLower(verifyStr) == "yes"
 	}
+	if !totp && !verify {
+		log.Println("Do you intend to use Webauthn (YubiKey)? (y/n)?")
+		_, err = fmt.Scanf("%s", &webauthnStr)
+		if err != nil {
+			log.Printf("Error while reading input: %v", err)
+		}
+		webauthn = strings.ToLower(webauthnStr) == "y" || strings.ToLower(webauthnStr) == "yes"
+	}
 	configFile, err := os.Create(getConfigPath())
 	if err != nil {
 		log.Fatalf("Could not open file %s for writing: %v", configName, err)
@@ -87,12 +98,14 @@ func initConfig() (config Config, err error) {
 		Password: string(pwdOkta),
 		Totp:     totp,
 		Verify:   verify,
+		Webauthn: webauthn,
 	}
 	configEncrypted := Config{
 		Username: encrypt(string(pwdMaster), userOkta),
 		Password: encrypt(string(pwdMaster), string(pwdOkta)),
 		Totp:     totp,
 		Verify:   verify,
+		Webauthn: webauthn,
 	}
 	configEncryptedBytes, err := yaml.Marshal(configEncrypted)
 	if err != nil {

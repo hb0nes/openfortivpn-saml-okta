@@ -34,7 +34,7 @@ func playwrightGetPage(pw *playwright.Playwright) (page playwright.Page) {
 	var headless bool
 	if config.Headless != nil {
 		headless = *config.Headless
-	} else if config.Totp || config.Verify {
+	} else if config.Totp || config.Verify || config.Webauthn {
 		headless = true
 	}
 	browser, err := pw.Chromium.Launch(
@@ -88,6 +88,13 @@ func totpChoose(page playwright.Page) {
 	if err := page.Click("div[data-se='google_otp'] a"); err != nil {
 		log.Printf("Could not choose TOTP as authentication method. %v", err)
 	}
+}
+
+func webauthnChoose(page playwright.Page) {
+	if err := page.Click("div[data-se='webauthn'] a"); err != nil {
+		log.Printf("Could not choose webauthn as authentication method. %v", err)
+	}
+	log.Println("Chose webauthn authentication. Press your authenticator device.")
 }
 
 func totpInput(page playwright.Page, totp string) {
@@ -189,6 +196,8 @@ func main() {
 		totp := totpAsk()
 		go totpChoose(page)
 		go totpInput(page, totp)
+	} else if config.Webauthn {
+		go webauthnChoose(page)
 	}
 	go navigateSAML(page)
 	go cookieSearch(page)
