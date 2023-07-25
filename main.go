@@ -170,12 +170,21 @@ func verifyChoose(page playwright.Page) {
 	log.Printf("Okta Verify selected. Check your Okta Verify app.")
 }
 
+func verifySearchChallenge(page playwright.Page) {
+	challenge, err := page.TextContent("div[class='number-challenge-section'] span")
+	if err != nil {
+		log.Println(err)
+	}
+	log.Printf("Found Okta Verify challenge number: %s", challenge)
+}
+
 func main() {
 	pw := playwrightInit()
 	config = configRead()
 	page := playwrightGetPage(pw)
 	if config.Verify {
 		go verifyChoose(page)
+		go verifySearchChallenge(page)
 	} else if config.Totp {
 		totp := totpAsk()
 		go totpChoose(page)
