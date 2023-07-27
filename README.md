@@ -28,7 +28,8 @@ In order to run it with sudo non-interactively, run this command:
 ## Usage
 openfortivpn-saml can run both with or without a browser.  
 
-- If you change your mind later, you can edit the config file and change `totp:`
+- If you change your mind later, you can edit the config file directly, the path of which is printed upon starting `openfortivpn-saml`. 
+- If you want to force browser usage regardless of authentication choices, add `headless: false` to the config file.
 
 #### Running
 Depending on how you currently use openfortivpn, your run command may vary:  
