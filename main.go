@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var config Config
+var config *Config
 
 func playwrightInit() (pw *playwright.Playwright) {
 	opts := playwright.RunOptions{
@@ -34,7 +34,7 @@ func playwrightGetPage(pw *playwright.Playwright) (page playwright.Page) {
 	var headless bool
 	if config.Headless != nil {
 		headless = *config.Headless
-	} else if config.Totp || config.Verify || config.Webauthn {
+	} else if config.Totp || config.Verify || config.Webauthn || config.FastPass {
 		headless = true
 	}
 	browser, err := pw.Chromium.Launch(
@@ -185,6 +185,15 @@ func verifySearchChallenge(page playwright.Page) {
 	log.Printf("Found Okta Verify challenge number: %s", challenge)
 }
 
+func fastPassChoose(page playwright.Page) {
+	if err := page.Click("div[class='okta-verify-container'] a"); err != nil {
+		log.Printf("Could not choose Okta FastPass as authentication method. %v", err)
+	}
+	if err := page.Click("div[data-se='okta_verify-signed_nonce'] a"); err != nil {
+		log.Printf("Could not choose Okta FastPass as authentication method. %v", err)
+	}
+}
+
 func main() {
 	pw := playwrightInit()
 	config = configRead()
@@ -201,8 +210,12 @@ func main() {
 	}
 	go navigateSAML(page)
 	go cookieSearch(page)
-	go usernameInput(page)
-	go passwordInput(page)
+	if config.FastPass {
+		go fastPassChoose(page)
+	} else {
+		go usernameInput(page)
+		go passwordInput(page)
+	}
 	if config.Totp {
 		time.Sleep(time.Second * 15)
 	} else {
