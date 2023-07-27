@@ -33,7 +33,7 @@ openfortivpn-saml can run both with or without a browser.
 #### Running
 Depending on how you currently use openfortivpn, your run command may vary:  
 ```
-openfortivpn-saml | sudo openfortivpn -c /etc/openfortivpn/config --cookie-on-stdin
+sudo openfortivpn -c /etc/openfortivpn/config --cookie="$(openfortivpn-saml)"
 ```
 #### MacOS Gatekeeper
 As openfortivpn-saml is not written by a licensed Mac/iOS developer, it is not officially signed.  
