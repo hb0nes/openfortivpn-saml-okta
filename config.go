@@ -122,7 +122,7 @@ func initConfig() (config *Config, err error) {
 		return
 	}
 	configEncrypted := *config
-	configEncrypted.Password = encrypt(config.Username, config.Username)
+	configEncrypted.Username = encrypt(config.PasswordMaster, config.Username)
 	configEncrypted.Password = encrypt(config.PasswordMaster, config.Password)
 	configEncryptedBytes, err := yaml.Marshal(configEncrypted)
 	if err != nil {

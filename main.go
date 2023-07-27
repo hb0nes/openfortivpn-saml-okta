@@ -88,6 +88,11 @@ func totpChoose(page playwright.Page) {
 	if err := page.Click("div[data-se='google_otp'] a"); err != nil {
 		log.Printf("Could not choose TOTP as authentication method. %v", err)
 	}
+	// Sometimes when using TOTP, it asks for second authentication method anyway.
+	time.Sleep(time.Second * 3)
+	if err := page.Click("div[data-se='okta_password'] a"); err != nil {
+		log.Printf("Could not choose TOTP as authentication method. %v", err)
+	}
 }
 
 func webauthnChoose(page playwright.Page) {
@@ -175,6 +180,12 @@ func verifyChoose(page playwright.Page) {
 		log.Printf("Could not choose Okta Verify as authentication method. %v", err)
 	}
 	log.Printf("Okta Verify selected. Check your Okta Verify app.")
+	// Sometimes when using okta verify, it asks for second authentication method anyway.
+	// Wait some time for the user to verify access and then enter the password
+	time.Sleep(time.Second * 3)
+	if err := page.Click("div[data-se='okta_password'] a"); err != nil {
+		log.Printf("Could not choose Okta Verify as authentication method. %v", err)
+	}
 }
 
 func verifySearchChallenge(page playwright.Page) {
