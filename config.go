@@ -158,6 +158,9 @@ func configRead() (config *Config) {
 			log.Fatalf("Could not decode config at %v: %v", getConfigPath(), err)
 		}
 	}
+	if config.FastPass {
+		return config
+	}
 	log.Println("Please enter your master password.")
 	pwdMaster, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {

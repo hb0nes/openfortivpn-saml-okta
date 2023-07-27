@@ -209,16 +209,6 @@ func main() {
 	pw := playwrightInit()
 	config = configRead()
 	page := playwrightGetPage(pw)
-	if config.Verify {
-		go verifyChoose(page)
-		go verifySearchChallenge(page)
-	} else if config.Totp {
-		totp := totpAsk()
-		go totpChoose(page)
-		go totpInput(page, totp)
-	} else if config.Webauthn {
-		go webauthnChoose(page)
-	}
 	go navigateSAML(page)
 	go cookieSearch(page)
 	if config.FastPass {
@@ -227,11 +217,19 @@ func main() {
 		go usernameInput(page)
 		go passwordInput(page)
 	}
-	if config.Totp {
-		time.Sleep(time.Second * 15)
-	} else {
-		time.Sleep(time.Second * 60)
+	if config.Verify {
+		go verifyChoose(page)
+		go verifySearchChallenge(page)
 	}
+	if config.Totp {
+		totp := totpAsk()
+		go totpChoose(page)
+		go totpInput(page, totp)
+	}
+	if config.Webauthn {
+		go webauthnChoose(page)
+	}
+	time.Sleep(time.Second * 60)
 	screenshotPath := screenshot(page)
 	log.Fatalf("Timed out. See screenshot at %v. Exiting.", screenshotPath)
 }
