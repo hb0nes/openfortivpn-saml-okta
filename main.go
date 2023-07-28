@@ -209,25 +209,25 @@ func main() {
 	pw := playwrightInit()
 	config = configRead()
 	page := playwrightGetPage(pw)
-	go navigateSAML(page)
-	go cookieSearch(page)
-	if config.FastPass {
-		go fastPassChoose(page)
-	} else {
-		go usernameInput(page)
-		go passwordInput(page)
-	}
-	if config.Verify {
-		go verifyChoose(page)
-		go verifySearchChallenge(page)
-	}
 	if config.Totp {
 		totp := totpAsk()
 		go totpChoose(page)
 		go totpInput(page, totp)
 	}
+	go navigateSAML(page)
+	go cookieSearch(page)
+	if config.Verify {
+		go verifyChoose(page)
+		go verifySearchChallenge(page)
+	}
 	if config.Webauthn {
 		go webauthnChoose(page)
+	}
+	if config.FastPass {
+		go fastPassChoose(page)
+	} else {
+		go usernameInput(page)
+		go passwordInput(page)
 	}
 	time.Sleep(time.Second * 60)
 	screenshotPath := screenshot(page)
