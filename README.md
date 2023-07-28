@@ -3,7 +3,7 @@
 openfortivpn-saml allows the use of SAML authentication when using Fortinet/FortiGate SSLVPN with Okta as IdP.
 ## Prerequisites
 - openfortivpn-saml requires `openfortivpn` to be installed.
-  - If the `--cookie-on-stdin` option is not known, your openfortivpn version is too old.
+  - If the `--cookie` option is not known, your openfortivpn version is too old.
   - Mac
     - `brew install openfortivpn`
   - Linux
